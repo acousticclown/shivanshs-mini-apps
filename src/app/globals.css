@@ -110,6 +110,19 @@ body {
   }
 }
 
+@keyframes nav-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.nav-progress-bar {
+  animation: nav-progress 0.85s ease-in-out infinite;
+}
+
 .animate-rise {
   animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

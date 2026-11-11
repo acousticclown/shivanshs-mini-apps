@@ -14,13 +14,13 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm font-semibold text-ink-soft">
-          <Link href="/apps" className="hover:text-ink">
+          <Link href="/apps" prefetch className="hover:text-ink">
             Apps
           </Link>
-          <Link href="/#about" className="hover:text-ink">
+          <Link href="/#about" prefetch className="hover:text-ink">
             About
           </Link>
-          <Link href="/admin" className="hover:text-ink">
+          <Link href="/admin/login" prefetch className="hover:text-ink">
             Admin
           </Link>
           {settings.social_links?.map((link) => (
