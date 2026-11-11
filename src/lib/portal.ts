@@ -462,5 +462,13 @@ export async function registerDeployedApp(input: {
     notes: "Auto-registered via /api/admin/register",
   });
 
+  try {
+    const { revalidateTag } = await import("next/cache");
+    revalidateTag("portal-apps", "max");
+    revalidateTag("portal-settings", "max");
+  } catch {
+    /* ignore in non-Next contexts */
+  }
+
   return mapApp(data, []);
 }
