@@ -39,7 +39,7 @@ export function getAdminBootstrapEmails(): string[] {
   const raw =
     process.env.ADMIN_BOOTSTRAP_EMAILS ||
     process.env.NEXT_PUBLIC_ADMIN_BOOTSTRAP_EMAILS ||
-    "shivanshsuryavanshi@gmail.com";
+    "dev.shivanshpratap@gmail.com";
   return raw
     .split(",")
     .map((e) => e.trim().toLowerCase())

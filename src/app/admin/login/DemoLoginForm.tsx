@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export function DemoLoginForm({ next }: { next: string }) {
   const router = useRouter();
-  const [email, setEmail] = useState("shivanshsuryavanshi@gmail.com");
+  const [email, setEmail] = useState("dev.shivanshpratap@gmail.com");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
