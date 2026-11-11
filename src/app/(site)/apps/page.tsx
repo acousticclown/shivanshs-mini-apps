@@ -2,7 +2,11 @@ import Link from "next/link";
 import { AppCard } from "@/components/portal/AppCard";
 import { SiteFooter } from "@/components/portal/SiteFooter";
 import { SiteHeader } from "@/components/portal/SiteHeader";
-import { getSettings, listCategories, listPublicApps } from "@/lib/portal";
+import {
+  getSettingsCached,
+  listCategoriesCached,
+  listPublicAppsCached,
+} from "@/lib/portal-cache";
 
 export const metadata = {
   title: "Directory",
@@ -17,9 +21,9 @@ export default async function AppsPage({
 }) {
   const params = await searchParams;
   const [settings, categories, apps] = await Promise.all([
-    getSettings(),
-    listCategories(),
-    listPublicApps({ q: params.q, category: params.category }),
+    getSettingsCached(),
+    listCategoriesCached(),
+    listPublicAppsCached({ q: params.q, category: params.category }),
   ]);
 
   return (
@@ -65,6 +69,7 @@ export default async function AppsPage({
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/apps"
+            prefetch
             className={`rounded-full px-3 py-1.5 text-xs font-700 uppercase tracking-wide ${
               !params.category
                 ? "bg-ink text-white"
@@ -76,6 +81,7 @@ export default async function AppsPage({
           {categories.map((c) => (
             <Link
               key={c.id}
+              prefetch
               href={`/apps?category=${c.slug}${params.q ? `&q=${encodeURIComponent(params.q)}` : ""}`}
               className={`rounded-full px-3 py-1.5 text-xs font-700 uppercase tracking-wide ${
                 params.category === c.slug

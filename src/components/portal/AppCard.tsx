@@ -25,7 +25,11 @@ export function AppCard({ app }: { app: Application }) {
         </div>
       </div>
       <h3 className="mt-4 font-display text-xl font-700 tracking-tight text-ink">
-        <Link href={`/apps/${app.slug}`} className="after:absolute after:inset-0">
+        <Link
+          href={`/apps/${app.slug}`}
+          prefetch
+          className="after:absolute after:inset-0"
+        >
           {app.name}
         </Link>
       </h3>

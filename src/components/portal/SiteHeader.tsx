@@ -11,7 +11,7 @@ export function SiteHeader({
   const dark = tone === "dark";
   return (
     <header className="site-shell flex items-center justify-between gap-6 py-5">
-      <Link href="/" className="group flex items-center gap-3">
+      <Link href="/" prefetch className="group flex items-center gap-3">
         <span
           className={`grid h-10 w-10 place-items-center rounded-2xl font-display text-lg font-800 tracking-tight ${
             dark ? "bg-white/15 text-white" : "bg-ink text-white"
@@ -31,6 +31,7 @@ export function SiteHeader({
       <nav className="flex items-center gap-2 sm:gap-4">
         <Link
           href="/apps"
+          prefetch
           className={`text-sm font-semibold ${
             dark ? "text-white/85 hover:text-white" : "text-ink-soft hover:text-ink"
           }`}
@@ -38,7 +39,8 @@ export function SiteHeader({
           Directory
         </Link>
         <Link
-          href="/admin"
+          href="/admin/login"
+          prefetch
           className={`hidden text-sm font-semibold sm:inline ${
             dark ? "text-white/70 hover:text-white" : "text-ink-soft hover:text-ink"
           }`}
@@ -47,6 +49,7 @@ export function SiteHeader({
         </Link>
         <Link
           href={settings.primary_cta_href || "/apps"}
+          prefetch
           className={`btn text-sm ${dark ? "btn-ghost" : "btn-primary"}`}
         >
           {settings.primary_cta_label || "Browse apps"}

@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Portal routes read cookies/session for admin — Cache Components not adopted yet.
+  // Soft-nav: keep client router cache warm so back/forward & revisits feel instant.
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   turbopack: {
     rules: {
       "*.css": {

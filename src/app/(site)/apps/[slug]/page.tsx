@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/portal/SiteFooter";
 import { SiteHeader } from "@/components/portal/SiteHeader";
-import { getAppBySlug, getSettings } from "@/lib/portal";
+import {
+  getAppBySlugCached,
+  getSettingsCached,
+} from "@/lib/portal-cache";
 
 export const revalidate = 60;
 
@@ -12,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const app = await getAppBySlug(slug);
+  const app = await getAppBySlugCached(slug);
   if (!app) return { title: "App not found" };
   return {
     title: app.name,
@@ -27,8 +30,8 @@ export default async function AppDetailPage({
 }) {
   const { slug } = await params;
   const [settings, app] = await Promise.all([
-    getSettings(),
-    getAppBySlug(slug),
+    getSettingsCached(),
+    getAppBySlugCached(slug),
   ]);
   if (!app) notFound();
 
@@ -38,6 +41,7 @@ export default async function AppDetailPage({
       <main className="site-shell py-10 sm:py-14">
         <Link
           href="/apps"
+          prefetch
           className="text-sm font-700 text-ink-soft hover:text-ink"
         >
           ← Directory

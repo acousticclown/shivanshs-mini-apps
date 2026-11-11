@@ -2,15 +2,18 @@ import Link from "next/link";
 import { AppCard } from "@/components/portal/AppCard";
 import { SiteFooter } from "@/components/portal/SiteFooter";
 import { SiteHeader } from "@/components/portal/SiteHeader";
-import { getSettings, listPublicApps } from "@/lib/portal";
+import {
+  getSettingsCached,
+  listPublicAppsCached,
+} from "@/lib/portal-cache";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
   const [settings, featured, all] = await Promise.all([
-    getSettings(),
-    listPublicApps({ featured: true }),
-    listPublicApps(),
+    getSettingsCached(),
+    listPublicAppsCached({ featured: true }),
+    listPublicAppsCached(),
   ]);
   const featuredApps = featured.length ? featured : all.slice(0, 3);
 
@@ -37,11 +40,16 @@ export default async function HomePage() {
             {settings.intro}
           </p>
           <div className="animate-rise-delay-2 mt-8 flex flex-wrap gap-3">
-            <Link href={settings.primary_cta_href || "/apps"} className="btn btn-primary">
+            <Link
+              href={settings.primary_cta_href || "/apps"}
+              prefetch
+              className="btn btn-primary"
+            >
               {settings.primary_cta_label || "Browse apps"}
             </Link>
             <Link
               href={settings.secondary_cta_href || "/#about"}
+              prefetch
               className="btn btn-ghost"
             >
               {settings.secondary_cta_label || "About"}
@@ -60,7 +68,11 @@ export default async function HomePage() {
               Highlighted mini apps from the factory.
             </p>
           </div>
-          <Link href="/apps" className="text-sm font-700 text-accent hover:text-accent-deep">
+          <Link
+            href="/apps"
+            prefetch
+            className="text-sm font-700 text-accent hover:text-accent-deep"
+          >
             View all →
           </Link>
         </div>
@@ -71,7 +83,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="about" className="border-y border-[var(--line)] bg-white/50 py-16 sm:py-20">
+      <section
+        id="about"
+        className="border-y border-[var(--line)] bg-white/50 py-16 sm:py-20"
+      >
         <div className="site-shell grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <h2 className="font-display text-3xl font-700 tracking-tight text-ink sm:text-4xl">
@@ -92,7 +107,7 @@ export default async function HomePage() {
               Discover apps, launch them in their own surface, and manage the
               ecosystem from a private admin dashboard.
             </p>
-            <Link href="/apps" className="btn btn-primary mt-6">
+            <Link href="/apps" prefetch className="btn btn-primary mt-6">
               Open directory
             </Link>
           </div>
