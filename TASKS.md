@@ -5,7 +5,8 @@
 - [x] Public homepage, directory, detail
 - [x] Admin auth, CRUD, settings, deployments UI
 - [x] Auto-register API + mini-app template
-- [ ] GitHub repo create + push (blocked on auth)
+- [x] GitHub repo create + push
 - [ ] Supabase project + migrations applied
 - [ ] Vercel project + production deploy
-- [ ] Production verification + media evidence
+- [x] Local production verification + media evidence
+- [ ] Production URL verification
