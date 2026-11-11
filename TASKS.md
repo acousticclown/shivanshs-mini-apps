@@ -6,7 +6,6 @@
 - [x] Admin auth, CRUD, settings, deployments UI
 - [x] Auto-register API + mini-app template
 - [x] GitHub repo create + push
-- [ ] Supabase project + migrations applied
-- [ ] Vercel project + production deploy
-- [x] Local production verification + media evidence
-- [ ] Production URL verification
+- [x] Supabase project + migrations applied
+- [x] Vercel project + production deploy
+- [x] Production verification + media evidence
