@@ -2,10 +2,8 @@
 
 | Integration | Status | Purpose |
 |-------------|--------|---------|
-| GitHub | Connected (`acousticclown`) | Source + PRs |
-| Vercel | Pending CLI login | Hosting |
-| Supabase | Pending login + project | Portal DB + Auth |
+| GitHub | Connected (`acousticclown`) | Source + Vercel Git link |
+| Vercel | Connected (Hobby) | Hosting + env secrets |
+| Supabase | Connected (`yconkkmnfyykhwflumed`) | Portal DB + Auth |
 
-Auto-register: `POST /api/admin/register` with `PORTAL_REGISTER_SECRET`.
-
-Health (no secrets) is visible in Admin → Overview.
+Auto-register: `POST /api/admin/register` with `PORTAL_REGISTER_SECRET` (Vercel secret).
