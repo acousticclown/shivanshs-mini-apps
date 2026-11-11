@@ -1,7 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AppForm } from "@/components/admin/AppForm";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { getAppById, listCategories } from "@/lib/portal";
 
 export const metadata = { title: "Edit app" };
@@ -11,8 +11,7 @@ export default async function EditAppPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
   const { id } = await params;
   const [app, categories] = await Promise.all([
     getAppById(id),

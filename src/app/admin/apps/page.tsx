@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { listAllApps } from "@/lib/portal";
 
 export const metadata = { title: "Manage apps" };
 
 export default async function AdminAppsPage() {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
   const apps = await listAllApps();
 
   return (

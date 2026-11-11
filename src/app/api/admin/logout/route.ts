@@ -4,8 +4,9 @@ import { hasSupabaseEnv, isDemoMode } from "@/lib/env";
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const res = NextResponse.redirect(new URL("/admin/login", url.origin));
-  res.cookies.set(DEMO_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+  const wantsJson =
+    request.headers.get("accept")?.includes("application/json") ||
+    request.headers.get("content-type")?.includes("application/json");
 
   if (!isDemoMode() && hasSupabaseEnv()) {
     try {
@@ -16,5 +17,14 @@ export async function POST(request: Request) {
       // ignore
     }
   }
+
+  if (wantsJson) {
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(DEMO_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+    return res;
+  }
+
+  const res = NextResponse.redirect(new URL("/admin/login", url.origin));
+  res.cookies.set(DEMO_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
   return res;
 }

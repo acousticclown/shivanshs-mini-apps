@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRegisterSecret } from "@/lib/env";
 import { registerDeployedApp } from "@/lib/portal";
-import { demoStore } from "@/lib/demo-store";
 import { z } from "zod";
 
 const BodySchema = z.object({
@@ -60,15 +59,6 @@ export async function POST(request: Request) {
   }
 
   const app = await registerDeployedApp(parsed.data);
-  demoStore.upsertDeployment({
-    application_id: app.id,
-    provider: parsed.data.hosting_provider ?? "vercel",
-    environment: "production",
-    status: "ready",
-    url: parsed.data.live_url,
-    commit_sha: parsed.data.commit_sha ?? null,
-    notes: "Auto-registered via /api/admin/register",
-  });
 
   return NextResponse.json({
     ok: true,

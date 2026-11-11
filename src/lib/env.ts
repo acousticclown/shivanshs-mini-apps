@@ -6,11 +6,16 @@ export function getSupabaseUrl(): string | undefined {
   );
 }
 
+/**
+ * Prefer the legacy JWT anon key for SSR/Auth.
+ * Newer `sb_publishable_…` keys are fine for some REST calls but are a weaker
+ * fit for @supabase/ssr cookie sessions — prefer ANON when both exist.
+ */
 export function getSupabaseAnonKey(): string | undefined {
   return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     undefined
   );
 }

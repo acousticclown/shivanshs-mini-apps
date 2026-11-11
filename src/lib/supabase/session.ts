@@ -2,10 +2,24 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAnonKey, getSupabaseUrl, hasSupabaseEnv } from "@/lib/env";
 
+function needsAuthRefresh(pathname: string) {
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/admin")
+  );
+}
+
+/**
+ * Refresh Supabase auth cookies on auth-related routes only.
+ * Public pages skip getClaims() so hard refreshes stay fast and stable.
+ * Routing decisions stay in page-level requireAdmin/login (no proxy redirects).
+ */
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   let supabaseResponse = NextResponse.next({ request });
 
-  if (!hasSupabaseEnv()) {
+  if (!hasSupabaseEnv() || !needsAuthRefresh(pathname)) {
     return supabaseResponse;
   }
 
@@ -26,17 +40,10 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
-  const path = request.nextUrl.pathname;
-
-  if (path.startsWith("/admin") && path !== "/admin/login") {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      url.searchParams.set("next", path);
-      return NextResponse.redirect(url);
-    }
+  try {
+    await supabase.auth.getClaims();
+  } catch {
+    // Never fail the document request because session refresh hiccuped.
   }
 
   return supabaseResponse;

@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { getStats, listIntegrations, listPublicApps } from "@/lib/portal";
 import { hasSupabaseEnv, isDemoMode } from "@/lib/env";
 
 export const metadata = { title: "Admin" };
 
 export default async function AdminHomePage() {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
 
   const [stats, integrations, published] = await Promise.all([
     getStats(),

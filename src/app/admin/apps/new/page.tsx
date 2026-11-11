@@ -1,14 +1,12 @@
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AppForm } from "@/components/admin/AppForm";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { listCategories } from "@/lib/portal";
 
 export const metadata = { title: "New app" };
 
 export default async function NewAppPage() {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
   const categories = await listCategories();
 
   return (

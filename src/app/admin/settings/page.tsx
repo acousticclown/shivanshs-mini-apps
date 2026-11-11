@@ -1,14 +1,12 @@
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { SettingsForm } from "@/components/admin/SettingsForm";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { getSettings } from "@/lib/portal";
 
 export const metadata = { title: "Portal settings" };
 
 export default async function AdminSettingsPage() {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
   const settings = await getSettings();
 
   return (
