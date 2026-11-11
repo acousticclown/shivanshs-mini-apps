@@ -7,6 +7,12 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Auth cookie refresh only where sessions matter.
+     * Public marketing routes are intentionally excluded for speed + hard-refresh stability.
+     */
+    "/admin/:path*",
+    "/auth/:path*",
+    "/api/admin/:path*",
   ],
 };

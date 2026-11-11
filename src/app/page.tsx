@@ -4,6 +4,8 @@ import { SiteFooter } from "@/components/portal/SiteFooter";
 import { SiteHeader } from "@/components/portal/SiteHeader";
 import { getSettings, listPublicApps } from "@/lib/portal";
 
+export const revalidate = 60;
+
 export default async function HomePage() {
   const [settings, featured, all] = await Promise.all([
     getSettings(),

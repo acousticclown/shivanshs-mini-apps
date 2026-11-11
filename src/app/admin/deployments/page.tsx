@@ -1,13 +1,11 @@
-import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOrRedirect } from "@/lib/admin-guard";
 import { listDeployments } from "@/lib/portal";
 
 export const metadata = { title: "Deployments" };
 
 export default async function DeploymentsPage() {
-  const admin = await requireAdmin();
-  if (!admin) redirect("/admin/login");
+  const admin = await requireAdminOrRedirect();
   const deployments = await listDeployments();
 
   return (

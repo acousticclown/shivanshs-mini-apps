@@ -9,7 +9,14 @@ import type {
   SiteSettings,
 } from "@/types/registry";
 
+/** Public/catalog reads — no cookies, safe on hard refresh. */
 async function supabaseClient() {
+  const { createPublicClient } = await import("@/lib/supabase/public");
+  return createPublicClient();
+}
+
+/** Authenticated admin mutations — cookie session. */
+async function supabaseAuthedClient() {
   const { createClient } = await import("@/lib/supabase/server");
   return createClient();
 }
@@ -101,7 +108,7 @@ export async function updateSettings(
   patch: Partial<SiteSettings>,
 ): Promise<SiteSettings> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.updateSettings(patch);
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const current = await getSettings();
   const { data, error } = await client
     .from("site_settings")
@@ -201,7 +208,7 @@ export async function listPublicApps(opts?: {
 
 export async function listAllApps(): Promise<Application[]> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.listAllApps();
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const { data } = await client
     .from("applications")
     .select("*, application_categories(id,name,slug)")
@@ -220,7 +227,9 @@ export async function getAppBySlug(
 ): Promise<Application | null> {
   if (isDemoMode() || !hasSupabaseEnv())
     return demoStore.getAppBySlug(slug, opts);
-  const client = await supabaseClient();
+  const client = opts?.includeDraft
+    ? await supabaseAuthedClient()
+    : await supabaseClient();
   const { data } = await client
     .from("applications")
     .select("*, application_categories(id,name,slug)")
@@ -239,7 +248,7 @@ export async function getAppBySlug(
 
 export async function getAppById(id: string): Promise<Application | null> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.getAppById(id);
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const { data } = await client
     .from("applications")
     .select("*, application_categories(id,name,slug)")
@@ -252,7 +261,7 @@ export async function getAppById(id: string): Promise<Application | null> {
 
 export async function createApp(input: ApplicationInput): Promise<Application> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.createApp(input);
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const { data, error } = await client
     .from("applications")
     .insert({
@@ -291,7 +300,7 @@ export async function updateApp(
   input: Partial<ApplicationInput>,
 ): Promise<Application | null> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.updateApp(id, input);
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const patch: Record<string, unknown> = { ...input };
   delete patch.tags;
   if (input.publication_status === "published") {
@@ -305,14 +314,14 @@ export async function updateApp(
 
 export async function deleteApp(id: string): Promise<boolean> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.deleteApp(id);
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   // Registry delete only — never tears down hosting infra
   const { error } = await client.from("applications").delete().eq("id", id);
   return !error;
 }
 
 async function syncTags(
-  client: Awaited<ReturnType<typeof supabaseClient>>,
+  client: Awaited<ReturnType<typeof supabaseAuthedClient>>,
   applicationId: string,
   tags: string[],
 ) {
@@ -339,7 +348,7 @@ async function syncTags(
 
 export async function listDeployments(): Promise<DeploymentRecord[]> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.listDeployments();
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const { data } = await client
     .from("deployment_records")
     .select("*")
@@ -349,7 +358,7 @@ export async function listDeployments(): Promise<DeploymentRecord[]> {
 
 export async function listIntegrations(): Promise<IntegrationRecord[]> {
   if (isDemoMode() || !hasSupabaseEnv()) return demoStore.listIntegrations();
-  const client = await supabaseClient();
+  const client = await supabaseAuthedClient();
   const { data } = await client.from("integration_records").select("*");
   return (data ?? []) as IntegrationRecord[];
 }
@@ -374,34 +383,84 @@ export async function registerDeployedApp(input: {
   hosting_provider?: Application["hosting_provider"];
   publish?: boolean;
 }): Promise<Application> {
-  const existing = await getAppBySlug(input.slug, { includeDraft: true });
-  if (existing) {
-    return (
-      (await updateApp(existing.id, {
-        live_url: input.live_url,
-        github_url: input.github_url,
-        description: input.description ?? existing.description,
-        hosting_provider: input.hosting_provider,
-        publication_status: input.publish
-          ? "published"
-          : existing.publication_status,
-        visibility: input.publish ? "public" : existing.visibility,
-      })) ?? existing
-    );
+  if (isDemoMode() || !hasSupabaseEnv()) {
+    const existing = demoStore.getAppBySlug(input.slug, { includeDraft: true });
+    if (existing) {
+      return (
+        demoStore.updateApp(existing.id, {
+          live_url: input.live_url,
+          github_url: input.github_url,
+          description: input.description ?? existing.description,
+          hosting_provider: input.hosting_provider,
+          publication_status: input.publish
+            ? "published"
+            : existing.publication_status,
+          visibility: input.publish ? "public" : existing.visibility,
+        }) ?? existing
+      );
+    }
+    return demoStore.createApp({
+      name: input.name,
+      slug: input.slug,
+      description: input.description ?? "",
+      short_description: input.description?.slice(0, 240) ?? "",
+      live_url: input.live_url,
+      github_url: input.github_url,
+      hosting_provider: input.hosting_provider ?? "vercel",
+      publication_status: input.publish ? "published" : "draft",
+      visibility: input.publish ? "public" : "private",
+      featured: false,
+      sort_priority: 0,
+      tags: [],
+      screenshots: [],
+    });
   }
-  return createApp({
+
+  // Factory path uses the service role (no browser session).
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const client = createServiceClient();
+  const { data: existing } = await client
+    .from("applications")
+    .select("*, application_categories(id,name,slug)")
+    .eq("slug", input.slug)
+    .maybeSingle();
+
+  const payload = {
     name: input.name,
     slug: input.slug,
-    description: input.description ?? "",
-    short_description: input.description?.slice(0, 240) ?? "",
+    description: input.description ?? existing?.description ?? "",
+    short_description:
+      (input.description ?? existing?.short_description ?? "").slice(0, 240),
     live_url: input.live_url,
-    github_url: input.github_url,
-    hosting_provider: input.hosting_provider ?? "vercel",
-    publication_status: input.publish ? "published" : "draft",
-    visibility: input.publish ? "public" : "private",
-    featured: false,
-    sort_priority: 0,
-    tags: [],
-    screenshots: [],
+    github_url: input.github_url ?? existing?.github_url ?? null,
+    hosting_provider:
+      input.hosting_provider ?? existing?.hosting_provider ?? "vercel",
+    publication_status: input.publish
+      ? "published"
+      : (existing?.publication_status ?? "draft"),
+    visibility: input.publish ? "public" : (existing?.visibility ?? "private"),
+    featured: existing?.featured ?? false,
+    sort_priority: existing?.sort_priority ?? 0,
+    published_at: input.publish
+      ? new Date().toISOString()
+      : (existing?.published_at ?? null),
+  };
+
+  const { data, error } = await client
+    .from("applications")
+    .upsert(payload, { onConflict: "slug" })
+    .select("*, application_categories(id,name,slug)")
+    .single();
+  if (error) throw error;
+
+  await client.from("deployment_records").insert({
+    application_id: data.id,
+    provider: payload.hosting_provider,
+    environment: "production",
+    status: "ready",
+    url: input.live_url,
+    notes: "Auto-registered via /api/admin/register",
   });
+
+  return mapApp(data, []);
 }

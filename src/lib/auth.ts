@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import {
   getAdminBootstrapEmails,
+  getSupabaseServiceKey,
   hasSupabaseEnv,
   isDemoMode,
 } from "@/lib/env";
@@ -30,6 +31,37 @@ export async function getSessionUser(): Promise<{
   };
 }
 
+async function bootstrapAdmin(user: { id: string; email: string }) {
+  const allowed = getAdminBootstrapEmails();
+  if (!allowed.includes(user.email.toLowerCase())) return null;
+
+  const row = {
+    id: user.id,
+    email: user.email,
+    display_name: user.email.split("@")[0] || user.email,
+    role: "owner" as const,
+  };
+
+  // Prefer service role so the first owner can be created despite RLS
+  // (owner-only write policy otherwise deadlocks bootstrap).
+  if (getSupabaseServiceKey()) {
+    try {
+      const { createServiceClient } = await import("@/lib/supabase/admin");
+      const service = createServiceClient();
+      const { error } = await service.from("admin_users").upsert(row);
+      if (!error) return { ...user, role: "owner" };
+    } catch {
+      // fall through to session client
+    }
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const client = await createClient();
+  const { error } = await client.from("admin_users").upsert(row);
+  if (error) return null;
+  return { ...user, role: "owner" };
+}
+
 export async function requireAdmin() {
   const user = await getSessionUser();
   if (!user) return null;
@@ -51,18 +83,18 @@ export async function requireAdmin() {
 
   if (admin) return { ...user, role: admin.role as string };
 
-  // Bootstrap: first matching email becomes owner row (service or self-insert if allowed)
-  const allowed = getAdminBootstrapEmails();
-  if (allowed.includes(user.email.toLowerCase())) {
-    await client.from("admin_users").upsert({
-      id: user.id,
-      email: user.email,
-      display_name: user.email.split("@")[0],
-      role: "owner",
-    });
-    return { ...user, role: "owner" };
-  }
-  return null;
+  return bootstrapAdmin(user);
+}
+
+/** Login page helper: only auto-advance when the user is a real admin. */
+export async function getAdminGate(): Promise<{
+  session: Awaited<ReturnType<typeof getSessionUser>>;
+  admin: Awaited<ReturnType<typeof requireAdmin>>;
+}> {
+  const session = await getSessionUser();
+  if (!session) return { session: null, admin: null };
+  const admin = await requireAdmin();
+  return { session, admin };
 }
 
 export { DEMO_COOKIE };

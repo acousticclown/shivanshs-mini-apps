@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
+import { getAdminGate } from "@/lib/auth";
 import { hasSupabaseEnv, isDemoMode } from "@/lib/env";
 import { DemoLoginForm } from "./DemoLoginForm";
 import { SupabaseLoginForm } from "./SupabaseLoginForm";
+import { SignOutButton } from "./SignOutButton";
 
 export const metadata = { title: "Admin login" };
 
@@ -12,10 +13,18 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const params = await searchParams;
-  const user = await getSessionUser();
-  if (user) redirect(params.next || "/admin");
+  const next = params.next && params.next.startsWith("/admin")
+    ? params.next
+    : "/admin";
+
+  // Only leave login when the visitor is an authorized admin.
+  // A bare Supabase session must NOT bounce to /admin (that caused the loop).
+  const { session, admin } = await getAdminGate();
+  if (admin) redirect(next);
 
   const demo = isDemoMode() || !hasSupabaseEnv();
+  const unauthorized =
+    Boolean(session && !admin) || params.error === "unauthorized";
 
   return (
     <div className="site-shell flex min-h-screen items-center justify-center py-16">
@@ -27,18 +36,30 @@ export default async function AdminLoginPage({
           Authorized operators only. Portal DB controls publication — not
           infrastructure teardown.
         </p>
-        {params.error && (
+        {unauthorized && (
+          <div className="mt-4 space-y-3 rounded-xl bg-orange-50 px-3 py-3 text-sm text-[var(--warn)]">
+            <p>
+              Signed in{session?.email ? ` as ${session.email}` : ""}, but this
+              account is not an admin. Sign out and use an allowlisted email, or
+              ask an owner to grant access.
+            </p>
+            <SignOutButton />
+          </div>
+        )}
+        {params.error && params.error !== "unauthorized" && (
           <p className="mt-4 rounded-xl bg-orange-50 px-3 py-2 text-sm text-[var(--warn)]">
             {params.error}
           </p>
         )}
-        <div className="mt-6">
-          {demo ? (
-            <DemoLoginForm next={params.next || "/admin"} />
-          ) : (
-            <SupabaseLoginForm next={params.next || "/admin"} />
-          )}
-        </div>
+        {!unauthorized && (
+          <div className="mt-6">
+            {demo ? (
+              <DemoLoginForm next={next} />
+            ) : (
+              <SupabaseLoginForm next={next} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { SiteFooter } from "@/components/portal/SiteFooter";
 import { SiteHeader } from "@/components/portal/SiteHeader";
 import { getAppBySlug, getSettings } from "@/lib/portal";
 
+export const revalidate = 60;
+
 export async function generateMetadata({
   params,
 }: {
