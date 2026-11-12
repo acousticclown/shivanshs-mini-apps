@@ -30,15 +30,6 @@ export function SiteHeader({
       </Link>
       <nav className="flex items-center gap-2 sm:gap-4">
         <Link
-          href="/apps"
-          prefetch
-          className={`text-sm font-semibold ${
-            dark ? "text-white/85 hover:text-white" : "text-ink-soft hover:text-ink"
-          }`}
-        >
-          Directory
-        </Link>
-        <Link
           href="/admin/login"
           prefetch
           className={`hidden text-sm font-semibold sm:inline ${
